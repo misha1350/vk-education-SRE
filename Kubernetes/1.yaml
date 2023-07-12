@@ -1,0 +1,261 @@
+# 1. /cats и /dogs должны указывать на первый shard StatefulSet'а, и на второй
+# 2. Чтобы был доступ к этим шардам, нужен Headless Service, тоесть нужно сделать ClusterIP: None
+# 3. Для доступа к /cats и /dogs нужно сделать Ingress
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: my-app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config1
+data:
+  cats-dogs: |
+    upstream cats {
+      server animal-storage-0:80;
+    }
+    upstream dogs {
+      server animal-storage-1:80;
+    }
+    server {
+        listen 80;
+        server_name cats-dogs.48.example.com www.cats-dogs.48.example.com;
+
+        location / {
+            add_header 'Content-Type' 'text/html';
+            return 200 "Cats and Dogs Review App";
+        }
+        location /cats {
+          proxy_pass http://cats;
+        }
+        location /dogs {
+          proxy_pass http://dogs;
+        }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config2
+data:
+  default.conf: |
+    server {
+        listen 80;
+        server_name localhost;
+
+        location / {
+            root /usr/share/nginx/html;
+            dav_methods PUT DELETE MKCOL COPY MOVE;
+            dav_ext_methods PROPFIND OPTIONS;
+            create_full_put_path on;
+            dav_access user:rw group:r all:r;
+            autoindex on;
+        }
+    }
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod-cats-dogs
+  labels:
+    app: nginx
+spec:
+  containers:
+  - name: nginx-container
+    image: nginx
+    ports:
+    - containerPort: 80
+    volumeMounts:
+    - name: config-volume
+      mountPath: /etc/nginx/sites-enabled/
+  volumes:
+  - name: config-volume
+    configMap:
+      name: nginx-config1
+      items:
+      - key: cats-dogs
+        path: sites-available/cats-dogs
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cats-dogs-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: cats-dogs
+  template:
+    metadata:
+      labels:
+        app: cats-dogs
+    spec:
+      containers:
+        - name: nginx-container
+          image: nginx
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/nginx/sites-enabled/
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi 
+      volumes:
+        - name: config-volume
+          configMap:
+            name: nginx-config1
+            items:
+              - key: cats-dogs
+                path: sites-available/cats-dogs
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cats-dogs-service
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: cats-dogs
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: app-health-check
+spec:
+  schedule: "*/1 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: curl
+            image: curlimages/curl
+            command:
+            - /bin/sh
+            - -c
+            - |
+              curl -s -o /dev/null -w "%{http_code}" http://cats-dogs-service/ | grep 200 && echo "$(date) - Application is available" >> /home/vbox/Downloads/minikube-test/app-health-check.log
+            volumeMounts:
+            - name: log-volume
+              mountPath: /home/vbox/Downloads/minikube-test/
+          restartPolicy: OnFailure
+          volumes:
+          - name: log-volume
+            hostPath:
+              path: /home/vbox/Downloads/minikube-test/
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config2
+data:
+  default.conf: |
+    server {
+        listen 80;
+        server_name localhost;
+
+        location / {
+            root /usr/share/nginx/html;
+            dav_methods PUT DELETE MKCOL COPY MOVE;
+            dav_ext_methods PROPFIND OPTIONS;
+            create_full_put_path on;
+            dav_access user:rw group:r all:r;
+            autoindex on;
+        }
+    }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: animal-storage-service
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: animal-storage
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: animal-storage
+spec:
+  serviceName: "animal-storage"
+  replicas: 2
+  selector:
+    matchLabels:
+      app: animal-storage
+  template:
+    metadata:
+      labels:
+        app: animal-storage
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/nginx/conf.d/
+        - name: data-volume
+          mountPath: /usr/share/nginx/html/
+      volumes:
+      - name: config-volume
+        configMap:
+          name: nginx-config2
+      - name: data-volume
+        emptyDir: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cats-dogs-ingress
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /cats
+        pathType: Prefix
+        backend:
+          service:
+            name: animal-storage-0
+            port:
+              number: 80
+      - path: /dogs
+        pathType: Prefix
+        backend:
+          service:
+            name: animal-storage-1
+            port:
+              number: 80

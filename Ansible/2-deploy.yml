@@ -1,0 +1,52 @@
+- hosts: localhost
+  vars:
+    guestbook_repo_url: "https://github.com/kubernetes/examples.git"
+    guestbook_app_path: "examples"
+  tasks:
+    # Запускаем Minikube, использующий контейнеры Docker: подразумевается, что
+    # после запуска скриптов первого задания будет установлен Docker вместе с Ansible.
+    # Если бы Ansible не был установлен, то логично бы установка не дошла бы до этого этапа
+    - name: Start Minikube (will take a long time and require 500+MB of RAM)
+      command: minikube start
+      args:
+        chdir: /usr/local/bin/
+      register: minikube_start
+
+    # Проверяем статус работы Minikube
+    - name: Check Minikube status
+      command: minikube status
+      args:
+        chdir: /usr/local/bin/
+    
+    # Вывод статуса работы Minikube в debug-вывод Ansible
+    - name: Display Minikube status
+      debug:
+        msg: "{{ minikube_status.stdout }}"
+
+    # Изменяем конфигурацию kubectl для использования Minikube
+    - name: Set context to Minikube
+      command: kubectl config use-context minikube
+      args:
+        chdir: /usr/local/bin/
+      register: kubectl_context
+
+    # Создаём папку examples и клонируем репозиторий kubernetes/examples
+    - name: Clone guestbook-go repository
+      git:
+        repo: "{{ guestbook_repo_url }}"
+        dest: "{{ guestbook_app_path }}"
+        
+    # Создаём контроллеры и сервисы guestbook-go    
+    - name: Creating guestbook-go controllers and services
+      shell: |
+        cd "{{ guestbook_app_path }}"
+        cd "guestbook-go"
+        kubectl create -f redis-master-controller.yaml
+        kubectl create -f redis-master-service.yaml
+        kubectl create -f redis-replica-controller.yaml
+        kubectl create -f redis-replica-service.yaml
+        kubectl create -f guestbook-controller.yaml
+        kubectl create -f guestbook-service.yaml
+
+    - debug :
+      msg : "Now run 'minikube tunnel'"

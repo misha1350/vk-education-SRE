@@ -1,0 +1,70 @@
+# Here's an example Ansible playbook that should perform the tasks you specified:
+
+---
+- name: Deploy PostgreSQL Container
+  hosts: all
+  
+  tasks:
+  
+  - name: Check if Docker is installed
+    stat:
+      path: /usr/bin/docker
+    register: docker_installed
+    failed_when: docker_installed.stat.exists == false
+
+  - name: Display Docker version
+    shell: docker version | grep Version
+    register: docker_version
+
+  - name: Create Docker volumes
+    docker_volume:
+      name: "{{ item }}"
+    with_items:
+      - postgres_data
+      - postgres_config
+
+  - name: Create Docker network
+    docker_network:
+      name: postgresnet
+
+  - name: Deploy PostgreSQL container
+    docker_container:
+      name: example-postgres
+      image: postgres
+      volumes:
+        - name: postgres_data
+          path: /var/lib/postgresql/data
+        - name: postgres_config
+          path: /etc/postgresql
+      networks:
+        - name: postgresnet
+          ipv4_address: "172.19.0.3"
+      env:
+        POSTGRES_USER: user
+        POSTGRES_PASSWORD: 1234
+        POSTGRES_DB: session1
+        POSTGRES_ROOT_PASSWORD: 123qwe
+      ports:
+        - "5432:5432"
+      state: started
+
+# docker run --name example-postgres -e POSTGRES_USER=user \
+# -e POSTGRES_PASSWORD=1234 -e POSTGRES_DB=session5 \
+# -e POSTGRES_ROOT_PASSWORD=123qwe -v postgres_data:/var/lib/postgresql/data \
+# -v postgres_config:/etc/postgresql -dp 5432:5432 postgres
+
+# This playbook does the following:
+
+# 1) It checks if Docker is installed by using the `stat` module to check the existence of the Docker binary.
+# 2) It displays the version of Docker using the `shell` module to run the `docker version` command and `grep` to filter out the output.
+# 3) It creates two Docker volumes using the `docker_volume` module and a loop to create both volumes.
+# 4) It creates a Docker network using the `docker_network` module to create a custom network for the Postgres container.
+# 5) It deploys a Docker container based on the official Postgres image, creating the container with specified name and mounting the postgres_data and postgres_config volumes. Furthermore, it specifies the "postgresnet" network with a specific IPv4 address, sets environment variables for Postgres (`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_ROOT_PASSWORD`) and exposes the default PostgreSQL port of 5432 for connectivity.
+
+# You can save this playbook to a file (e.g. `deploy_postgres.yml`) and execute it using the following command, assuming you have Ansible installed on your machine:
+
+# ```
+# ansible-playbook deploy_postgres.yml
+# ```
+
+# Note that you might need to adjust the Postgres container configuration based on your specific requirements.

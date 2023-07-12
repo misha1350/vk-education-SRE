@@ -1,0 +1,23 @@
+pipeline {
+    agent { label "ansible" } 
+
+    stages {
+        stage('Run Ansible Playbook which deploys the LAMP server') {
+            steps {
+                sh '''
+                    echo $PATH
+                    whoami
+                    ansible-playbook LAMP-installation2.yml
+                '''
+            }
+        }
+        stage('Load MySQL database dump') {
+            steps {
+                sh '''
+                    mysql -u root -padmin123 -e "CREATE DATABASE IF NOT EXISTS test"
+                    mysql -u root -padmin123 test < test.sql
+                '''
+            }
+        }
+    }
+}

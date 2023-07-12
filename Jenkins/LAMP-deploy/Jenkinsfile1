@@ -1,0 +1,32 @@
+pipeline {
+    agent { label "ansible" } 
+
+    stages {
+        // stage('Run Ansible Playbook which deploys the LAMP server') {
+        //     steps {
+        //         sh '''
+        //             echo $PATH
+        //             whoami
+        //             ansible-playbook LAMP-installation2.yml
+        //         '''
+        //     }
+        // }
+        stage('Execute Ansible Playbook') {
+            steps {
+                // ansiblePlaybook(
+                //     playbook: 'load-MySQL-dump.yml'
+                // )
+                sh '''
+                    mysql -uroot -p123qwe -e "CREATE DATABASE IF NOT EXISTS test"
+                    mysql -uroot -p123qwe test < classicmodels.sql
+                '''
+            }
+        }
+        stage('Create Database Dump') {
+            steps {
+                sh 'mysqldump -u root -p123qwe test > MySQL_dump.sql'
+                archiveArtifacts mysqldump: 'MySQL_dump.sql'
+            }
+        }
+    }
+}

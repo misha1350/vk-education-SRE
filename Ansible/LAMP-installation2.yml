@@ -1,0 +1,30 @@
+- name: Install LAMP server
+  hosts: myhost
+  become: yes
+  remote_user: s.ivannikov
+  #vars_files:
+  #  - /etc/ansible/hosts/inventory.ini
+
+  tasks:
+    - name: Install Apache
+      apt:
+        name: apache2
+        state: present
+
+    - name: Install MySQL
+      apt:
+        name: default-mysql-server
+        state: present
+
+    - name: Install PHP
+      apt:
+        name: php
+        state: present
+
+    - name: Create database users
+      mysql_user:
+        name: "{{ item.name }}"
+        password: "{{ item.password }}"
+        priv: "{{ item.priv }}"
+        host: "{{ item.host }}"
+      with_items: "{{ users }}"

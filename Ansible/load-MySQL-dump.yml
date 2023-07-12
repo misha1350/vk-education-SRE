@@ -1,0 +1,22 @@
+- name: Load MySQL dump
+  hosts: localhost
+  become: yes
+  remote_user: s.ivannikov
+  tasks:
+    - name: Check if database exists
+      shell: mysql -e 'SHOW DATABASES;' | grep my_database
+      register: db_exists
+      ignore_errors: yes
+
+    - name: Create database if it doesn't exist
+      mysql_db:
+        name: test
+        state: present
+      when: db_exists.rc != 0
+
+    - name: Load database dump
+      mysql_db:
+        name: test
+        state: import
+        target: cd /home/d.alexeev/jenkins/workspace/Create\ MySQL\ DB\ dump/classicmodels.yml
+      when: db_exists.rc != 0

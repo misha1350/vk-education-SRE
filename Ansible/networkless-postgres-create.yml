@@ -1,0 +1,44 @@
+---
+- name: Deploy PostgreSQL Container
+  hosts: localhost
+  
+  tasks:
+  
+  - name: Check if Docker is installed
+    stat:
+      path: /usr/bin/docker
+    register: docker_installed
+    failed_when: docker_installed.stat.exists == false
+
+  - name: Display Docker version
+    shell: docker version | grep Version
+    register: docker_version
+
+  - name: Create Docker volumes
+    docker_volume:
+      name: "{{ item }}"
+    with_items:
+      - postgres_data
+      - postgres_config
+
+  # - name: Create Docker network
+  #   docker_network:
+  #     name: postgresnet
+
+  - name: Deploy PostgreSQL container
+    docker_container:
+      name: example-postgres
+      image: postgres
+      volumes:
+        - name: postgres_data
+          path: /var/lib/postgresql/data
+        - name: postgres_config
+          path: /etc/postgresql
+      env:
+        POSTGRES_USER: user
+        POSTGRES_PASSWORD: 1234
+        POSTGRES_DB: session5
+        POSTGRES_ROOT_PASSWORD: 123qwe
+      ports:
+        - "5432:5432"
+      state: started

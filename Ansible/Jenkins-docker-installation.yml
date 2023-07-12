@@ -1,0 +1,33 @@
+- hosts: localhost
+  tasks:
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+    
+    - name: Create Jenkins data directory
+      file:
+        path: /var/jenkins_home
+        state: directory
+        mode: '0755'
+
+    - name: Create Docker Volume for Jenkins data
+      docker_volume:
+        name: jenkins-data
+        driver_options:
+          type: none
+          device: /var/jenkins_home
+          o: bind
+
+    - name: Run Jenkins Container with host network
+      docker_container:
+        name: jenkins
+        image: jenkins/jenkins:2.387.2
+        state: started
+        restart_policy: always
+        network_mode: host # When using a host network, port bindings are not possible
+        #ports:
+          # - "8472:8080"
+          # - "50000:50000"
+        volumes:
+          - jenkins-data:/var/jenkins_home

@@ -1,0 +1,259 @@
+    1  poweroff
+    2  . admin-rc
+    3  pvscan
+    4  for vg in alpha alpha2 beta beta2 ; do lvcreate -n discard -l 100%FREE $vg ; blkdiscard -f /dev/$vg/discard ; lvremove -y /dev/$vg/discard ; done
+    5  sync
+    6  poweroff
+    7  . admin-rc
+    8  openstack network list
+    9  openstack security group list
+   10  openstack security group delete fedd4586-ef11-47a8-a789-25f337d08b34
+   11  openstack security group rule list
+   12  openstack security group rule list 20b1c374-3c00-444d-aab4-51e55d700348
+   13  openstack security group rule delete 4a16e74b-7f65-4f2b-a304-780a463b95e2
+   14  openstack security group rule delete fe3a7966-1520-4787-8bc7-7543858be671
+   15  openstack project list
+   16  openstack security group rule list 40eacef038c347e9872e733b1c911460
+   17  openstack security group rule list 0aa3d61d-ecd0-4be7-bf4b-d708ab1e4bb5
+   18  openstack user list
+   19  openstack project list
+   20  sync
+   21  date
+   22  poweroff
+   23  ceph -s
+   24  reboot
+   25  ceph -s
+   26  ceph osd dump
+   27  ceph osd blocklist clear
+   28  ceph osd dump
+   29  openstack server list
+   30  . admin-rc
+   31  openstack server list
+   32  systemctl --failed
+   33  openstack server list
+   34  openstack volume list
+   35  openstack secuity group list
+   36  openstack security group list
+   37  openstack keypair list
+   38  openstack image list
+   39  zone=alpha
+   40  #nova boot VM-$zone --flavor base-1-1
+   41  openstack network list
+   42  nova boot VM-$zone --flavor base-1-1 --nic net_id=3b731352-58a4-4c52-930f-ceccc0c9f3a6 --keypair littlebro --block_device dest=volume,id=a9f84559-a720-4dca-b317-4ff30b28b266,source=image,size=15,volume_type=fast
+   43  nova help boot
+   44  nova boot VM-$zone --flavor base-1-1 --nic net_id=3b731352-58a4-4c52-930f-ceccc0c9f3a6 --key-name littlebro --block_device dest=volume,id=a9f84559-a720-4dca-b317-4ff30b28b266,source=image,size=15,volume_type=fast
+   45  nova boot VM-$zone --flavor base-1-1 --nic net_id=3b731352-58a4-4c52-930f-ceccc0c9f3a6 --key-name littlebro --block-device dest=volume,id=a9f84559-a720-4dca-b317-4ff30b28b266,source=image,size=15,volume_type=fast
+   46  nova boot VM-$zone --flavor base-1-1 --nic net-name=extnet --key-name littlebro --block-device dest=volume,id=a9f84559-a720-4dca-b317-4ff30b28b266,source=image,size=15,volume_type=fast
+   47  nova boot VM-$zone --flavor base-1-1 --nic net-name=extnet --availability-zone alpha --key-name littlebro --block-device dest=volume,id=a9f84559-a720-4dca-b317-4ff30b28b266,source=image,size=15,volume_type=fast
+   48  nova boot VM-$zone --flavor base-1-1 --nic net-name=extnet --availability-zone alpha --key-name littlebro --block-device dest=volume,bootindex=0,id=a9f84559-a720-4dca-b317-4ff30b28b266,source=image,size=15,volume_type=fast
+   49  zone=beta
+   50  nova boot VM-$zone --flavor base-1-1 --nic net-name=extnet --availability-zone alpha --key-name littlebro --block-device dest=volume,bootindex=0,id=a9f84559-a720-4dca-b317-4ff30b28b266,source=image,size=15,volume_type=fast
+   51  openstack server list
+   52  for zone in alpha beta ; do openstack volume create --size 5 --type slow --availability-zone $zone test-vol-$zone ; done
+   53  openstack server list
+   54  openstack volume list
+   55  openstack server add volume VM-$zone tes-vol-$zone
+   56  openstack server add volume VM-$zone test-vol-$zone
+   57  zone=alpha
+   58  openstack server add volume VM-$zone test-vol-$zone
+   59  cinder list
+   60  virsh
+   61  openstack server add volume VM-beta test-vol-beta
+   62  journalctl -u openstack-nova-conductor
+   63  journalctl -u openstack-nova-api.service
+   64  openstack server add volume VM-beta test-vol-beta
+   65  openstack server show
+   66  openstack server show VM-beta
+   67  cinder list
+   68  cinder service-list
+   69  less /var/log/cinder/ceph-beta-volume.log
+   70  openstack server add volume VM-beta test-vol-beta
+   71  cinder service-list
+   72  cinder list
+   73  openstack server add volume VM-beta test-vol-beta
+   74  ls -l /etc/ceph/
+   75  diff -u /etc/cinder/ceph-*.conf
+   76  ceph auth list
+   77  virsh secret-list
+   78  virsh secret-show 6667c858-d659-40e6-9fe2-768ec577311d
+   79  virsh secret-get-value 6667c858-d659-40e6-9fe2-768ec577311d
+   80  virsh secret-get-value 6667c858-d659-40e6-9fe2-768ec577311d | md5sum
+   81  echo AQDtr8ZjmD1+ABAAKmut4iy9TBQb972e1pI6pQ== | md5sum
+   82  rbd ls --pool beta
+   83  ceph -s
+   84  ceph osd dump
+   85  vi /etc/cinder/ceph-beta-cinder.conf
+   86  ls -l /etc/ceph/
+   87  cat /etc/ceph/ceph.conf
+   88  ls -l /etc/ceph
+   89  openstack server add volume VM-beta test-vol-beta
+   90  cinder lsit
+   91  cinder list
+   92  openstack server add volume VM-beta test-vol-beta
+   93  md5sum /etc/ceph/ceph.client.admin.keyring
+   94  md5sum /etc/ceph/*
+   95  vi /etc/cinder/ceph-beta-cinder.conf
+   96  ceph auth list
+   97  virsh secret-get-value 6667c858-d659-40e6-9fe2-768ec577311d
+   98  virsh secret-set-value 6667c858-d659-40e6-9fe2-768ec577311d
+   99  virsh secret-set-value 6667c858-d659-40e6-9fe2-768ec577311d AQCNYcFjRDMtBhAA/jZZz9TswdslPqn7aerqYw==
+  100  openstack server add volume VM-beta test-vol-beta
+  101  cinder list
+  102  nova delete b1932e15-66c2-4233-8ebd-7f924c233e74
+  103  nova delete 42d83cb3-8699-4908-aa63-ad0e1ca378c9
+  104  journalctl -f
+  105  ls -l /etc/ceph/
+  106  cat /etc/sysconfig/selinux
+  107  journalctl -f
+  108  . admin-rc
+  109  openstack volume list
+  110  openstack volume delete 70ae5de3-5b09-4d44-93e7-fac772dd9e85 f023517d-d8c1-49f7-b144-dcd46f8556c5 1b2cb7f3-a0b7-4232-839c-abcfd84554b9 c977b33f-6240-4cac-a77f-b398b64e8b7e
+  111  openstack volume list
+  112  poweroff
+  113  for vg in alpha alpha2 beta beta2 ; do lvcreate -n discard -l 100%FREE $vg ; blkdiscard -f /dev/$vg/discard ; lvremove -y /dev/$vg/discard ; done
+  114  poweroff
+  115  reboot
+  116  systemctl --failed
+  117  ld
+  118  systemctl --failed
+  119  . admin-rc
+  120  ls
+  121  top
+  122  cat admin-rc
+  123  openstack endpoint list
+  124  openstack project lis
+  125  openstack project list
+  126  openstack domain list
+  127  openstack user list
+  128  openstack token issue
+  129  mytoken=gAAAAABke0I6chyw9CoZmqYJXGR5Yv_ZiCkOJeFKzsF27iLyBGYmHsrXe7HrKhtVzo2nbghpxyb3bDxwjg-uzE3ZGs8DChMhcytBVf6MV5OgrCgWeF2bqfmrWRGHQkPQVKw4_1g6Q9CZ1pUD6lPJIp7qweL7YDO4vFx4fSLukezajig1FCC9V6c
+  130  openstack endpoint list
+  131  curl -Hx-auth-token:$mytoken http://glance-api-public.openstack.demo:9292/
+  132  curl -i -Hx-auth-token:$mytoken http://glance-api-public.openstack.demo:9292/
+  133  curl -i -Hx-auth-token:$mytoken http://glance-api-public.openstack.demo:9292/v2/
+  134  curl -i -Hx-auth-token:$mytoken http://glance-api-public.openstack.demo:9292/v2/images
+  135  clear
+  136  openstack volume list
+  137  openstack volume type list
+  138  openstack volume type show slow
+  139  openstack volume type show fast
+  140  cinger get-pools
+  141  cinder get-pools
+  142  systemctl --failed
+  143  openstack volume create --size 5 --type fast --availability-zone alpha Alpha-LVM-1
+  144  openstack volume list
+  145  openstack volume show Alpha-LVM-1
+  146  lvscan
+  147  openstack volume create --size 1 --type fast --availability-zone alpha Alpha-LVM-2
+  148  openstack volume create --size 1 --type fast --availability-zone alpha Alpha-LVM-3
+  149  openstack volume create --size 1 --type fast --availability-zone alpha Alpha-LVM-4
+  150  clear
+  151  lvscan
+  152  openstack volume create --size 1 --type slow --availability-zone beta Beta-LVM-4
+  153  rados lspools
+  154  rbd --pool beta ls
+  155  rados ls --pool beta
+  156  rbd info --pool beta volume-ac731ca4-2723-4180-837c-54649385fa7c
+  157  openstack volume list
+  158  openstack volume snapshot create --help
+  159  openstack volume snapshot create --volume ac731ca4-2723-4180-837c-54649385fa7c MySnap-1
+  160  openstack volume snapshot show ccbe0a81-70ae-4239-8e8a-a225d033f9da
+  161  rbd info --pool beta volume-ac731ca4-2723-4180-837c-54649385fa7c
+  162  rbd --pool beta ls volume-ac731ca4-2723-4180-837c-54649385fa7c
+  163  rbd --pool beta snap ls volume-ac731ca4-2723-4180-837c-54649385fa7c
+  164  rbd --pool beta snap rm volume-ac731ca4-2723-4180-837c-54649385fa7c@ccbe0a81-70ae-4239-8e8a-a225d033f9da
+  165  rbd --pool beta snap rm volume-ac731ca4-2723-4180-837c-54649385fa7c@snapshot-ccbe0a81-70ae-4239-8e8a-a225d033f9da
+  166  openstack volume create --help
+  167  openstack volume create ClonedVolume --size 3 --type slow --availability-zone beta --snapshot ccbe0a81-70ae-4239-8e8a-a225d033f9da
+  168  openstack volume show b6f53973-c3e1-4560-8805-cc113a0c6548
+  169  rbd --pool beta ls
+  170  rbd info --pool beta volume-b6f53973-c3e1-4560-8805-cc113a0c6548
+  171  rbd info --pool beta volume-b6f53973-c3e1-4560-8805-cc113a0c6548 | grep parent
+  172  openstack volume snapshot delete ccbe0a81-70ae-4239-8e8a-a225d033f9da
+  173  openstack volume snapshot list
+  174  rbd --pool beta flatten volume-b6f53973-c3e1-4560-8805-cc113a0c6548
+  175  rbd info --pool beta volume-b6f53973-c3e1-4560-8805-cc113a0c6548
+  176  openstack volume snapshot delete ccbe0a81-70ae-4239-8e8a-a225d033f9da
+  177  openstack volume snapshot list
+  178  openstack volume list
+  179  for v in b6f53973-c3e1-4560-8805-cc113a0c6548 ac731ca4-2723-4180-837c-54649385fa7c 60911848-886f-4dcf-8149-ccbbb3f8ceca d3b0a592-0e95-440d-83dd-ff3b6871b67b 395668af-f8ba-4094-838a-1428f16c8ea6 9b4626bf-a321-4c0d-ae16-2fd9e344f0bb ; do openstack volume delete $v ; done
+  180  openstack volume list
+  181  clear
+  182  openstack hypervisor list
+  183  echo $myzone
+  184  echo $zone
+  185  echo
+  186  echo $Myzone
+  187  echo $myzne
+  188  echo $myZone
+  189  zone=alpha
+  190  screen
+  191  tmux
+  192  openstack flavor list
+  193  openstack image list
+  194  openstack keypair list
+  195  id=a9f84559-a720-4dca-b317-4ff30b28b266
+  196  echo $id
+  197  exit
+  198  cat > id_rsa.pub
+  199  ls
+  200  openstack keypair create DEMO-key --type ssh --public-key id_rsa.pub
+  201  . admin-rc
+  202  openstack keypair create DEMO-key --type ssh --public-key id_rsa.pub
+  203  openstack keypair list
+  204  nova boot VM-$zone --flavor base-1-1 --nic net-name-extnet --availability-zone $zone --key-name DEMO-key --block-device dest=volume,bootinxdex=0,id=$id,source=image,size=15,volume_type=fast
+  205  echo $zone
+  206  openstack images sho
+  207  openstack images list
+  208  openstack image list
+  209  echo $id
+  210  id=a9f84559-a720-4dca-b317-4ff30b28b266
+  211  openstack flavor list
+  212  zone=alpha
+  213  nova boot VM-$zone --flavor base-1-1 --nic net-name-extnet --availability-zone $zone --key-name DEMO-key --block-device dest=volume,bootinxdex=0,id=$id,source=image,size=15,volume_type=fast
+  214  nova boot VM-$zone --flavor base-1-1 --nic net-name-extnet --availability-zone $zone --key-name DEMO-key --block-device dest=volume,bootindex=0,id=$id,source=image,size=15,volume_type=fast
+  215  nova boot VM-$zone --flavor base-1-1 --nic net-name=extnet --availability-zone $zone --key-name DEMO-key --block-device dest=volume,bootindex=0,id=$id,source=image,size=15,volume_type=fast
+  216  openstack flavour show
+  217  openstack flavor list
+  218  echo id
+  219  echo $id
+  220  openstack server list
+  221  ping 192.168.150.87
+  222  exit
+  223  openstack port list
+  224  exit
+  225  openstack port list
+  226  . admin-rc
+  227  openstack port list
+  228  openstack port show 44e0e716-087c-4fee-9539-462be81000c8
+  229  openstack security group show 20b1c374-3c00-444d-aab4-51e55d700348
+  230  openstack security group rule list 20b1c374-3c00-444d-aab4-51e55d700348
+  231  openstack security group create SSH-AND-PIN
+  232  openstack security group rule create SSH-AND-PIN --ingress --remote-ip 0.0.0.0/0 --ethertype ipv4 --protocol tcp --dst-port 22
+  233  openstack port list
+  234  openstack port set 44e0e716-087c-4fee-9539-462be81000c8 --name VM-alpha --security-group SSH-AND-PIN
+  235  openstack security group rule create SSH-AND-PIN --ingress --remote-ip 0.0.0.0/0 --ethertype ipv4 --protocol icmp
+  236  ping 192.168.150.87
+  237  exit
+  238  . admin-rc
+  239  history
+[root@ministack ~]#
+
+
+nova boot (родственник openstack server create)
+
+openstack server add volume (--help)
+
+openstack volume create
+
+
+
+На гипервизорах ministack и compute показать имена тредов ваших виртуальных машин
+
+Показать ID rbd для новых volume'ов
+
+Используя команду targetcli и iscsiadm -m session определить target и LUN для системных
+дисков ВМ (запускать команды с ministack и compute)
+
+Обеспечитть сетевую связанность обоих ВМ (работающий ping)
+
