@@ -20,6 +20,7 @@ BASE_PORT=3306
 BASE_DATA_DIR=/var/lib/mysql
 BASE_SOCKET_PATH=/var/lib/mysql
 BASE_ERROR_LOG_PATH=/var/log/mysqld
+PHP_VER=8.2.8
 
 
 
@@ -143,6 +144,9 @@ rm -rf php.tar.gz php-8.2.8
 echo -e "${YELLOW}\tRemove the binaries yourself with `rm -rf php-8.2.8`, if you wish to do so${NC}"
 
 echo -e "${GREEN}\tComplete${NC}"
+
+
+
 
 # for ((i=1; i<=$REPLICAS; i++))
 # do
