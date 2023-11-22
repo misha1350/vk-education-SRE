@@ -1,0 +1,127 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mindbox-marketing-automation-deployment
+spec:
+# Сначала можно сделать 1 под - HPA автоматически добавит ещё, если надо.
+  replicas: 1
+  strategy:
+  # Стратегия обновления старых подов новыми с нулевым временем простоя.
+  # Экономит ресурсы и повышает отказоустойчивость.
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1 # Можно добавить на 1 под больше, чем нужно (всего 2 пода) во время RU.
+      maxUnavailable: 1 # До 1 пода может быть недоступно во время RU.
+  selector:
+    matchLabels:
+      app: mindbox-marketing-automation-app
+  template:
+    metadata:
+      labels:
+        app: mindbox-marketing-automation-app
+    spec:
+    # Нужно для распределения подов по зонам доступности.
+      affinity: 
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - mindbox-marketing-automation-app
+              topologyKey: topology.kubernetes.io/zone
+      containers:
+      - name: mindbox-marketing-automation-container
+        image: mindboxmarketingautomation:latest
+        ports:
+        - containerPort: 8080
+        # readinessProbe проверяет, готов ли под принимать трафик.
+        # Известно, что приложение запускается за 5-10 секунд, значит подождём 10 секунд.
+        # Если readinessProbe не пройдёт 2 раза (проверка каждые 5 секунд),
+        # то под будет обозначен как неготовый и ему нужно перестать посылать запросы.
+        readinessProbe: 
+        # Проверка может не пройти один раз в случае кратковременного сбоя сети,
+        # поэтому лучше проверить хотя-бы 2 раза. 
+          failureThreshold: 2 
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 10 
+          periodSeconds: 5  
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources:
+          requests:
+          # Сначала приложению нужно почти всё ядро, но потом оно может обойтись и 0.1 CPU.
+            cpu: "100m" 
+            memory: "128Mi" 
+          limits:
+            cpu: "1000m" 
+            memory: "256Mi" 
+---
+# HPA автоматически масштабирует приложение в зависимости от нагрузки на CPU.
+# В разные времена суток нагрузка разнится, поэтому HPA будет экономить ресурсы кластера
+# вне пиковых часов, А ещё повысится отказоустойчивость приложения, чтобы точно хватило подов.
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: mindbox-marketing-automation-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: mindbox-marketing-automation-deployment
+  minReplicas: 1 
+  maxReplicas: 4 
+  metrics:
+  - type: Resource
+    resource:
+        name: cpu
+        # Если загрузка CPU будет больше 30%, то HPA добавит ещё один под (до 4).
+        # Если же загрузка будет меньше 30%, то HPA удалит ненужный под.
+        targetAverageUtilization: 30
+        targetAverageValue: "300m" 
+---
+# Приложение будет работать внутри мультизонного кластера;
+# Оно вероятно не потребует LoadBalancer'а для доступа из Интернета.
+# Можно использовать ClusterIP, и это ещё и сэкономит нам ресурсы.
+apiVersion: v1
+kind: Service
+metadata:
+  name: mindbox-marketing-automation-service
+spec:
+  selector:
+    app: mindbox-marketing-automation-app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+---
+# PDB повысит отказоустойчивость приложения во время обслуживания кластера
+# или масштабирования приложения или кластера
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: mindbox-marketing-automation-pdb
+spec:
+  minAvailable: 3
+  selector:
+    matchLabels:
+      app: mindbox-marketing-automation-app
+---
+# ResourceQuota ограничит потребление ресурсов приложением среди всего кластера,
+# чтобы во время Чёрной Пятницы оно не забрало все ресурсы и не уронило другие приложения.
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: mindbox-marketing-automation-resource-quota
+spec:
+  hard:
+    cpu: "4" 
+    memory: 1Gi
+    pods: "4"
+# Всякую информацию, которую я недопонимал, я брал из оф. документации Kubernetes и с сайта Elastic,
+# пропуская её через нейросеть Bing Chat для быстрой аггрегации информации.
